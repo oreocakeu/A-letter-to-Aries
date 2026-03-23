@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Letter For Aries</title>
+<link rel="icon" type="image/png" href="aries.png">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Cinzel:wght@300;400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #e8e4dc;
+    --ink-dim: #a09a90;
+    --ink-ghost: rgba(232,228,220,0.08);
+    --star-glow: rgba(232,228,220,0.9);
+    --paper: rgba(20,18,14,0.96);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: #080608;
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    overflow-x: hidden;
+  }
+
+  /* ── CANVAS SKY ── */
+  #sky {
+    position: fixed; inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── NEBULA LAYERS ── */
+  .nebula {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    animation: nebulaBreath 18s ease-in-out infinite;
+  }
+  .nebula-1 {
+    width: 600px; height: 400px;
+    top: -100px; left: -150px;
+    background: radial-gradient(ellipse, rgba(60,55,80,0.5) 0%, transparent 70%);
+    animation-delay: 0s;
+  }
+  .nebula-2 {
+    width: 500px; height: 500px;
+    bottom: -150px; right: -100px;
+    background: radial-gradient(ellipse, rgba(40,50,70,0.4) 0%, transparent 70%);
+    animation-delay: -6s;
+  }
+  .nebula-3 {
+    width: 700px; height: 300px;
+    top: 30%; left: 20%;
+    background: radial-gradient(ellipse, rgba(30,30,40,0.3) 0%, transparent 70%);
+    animation-delay: -12s;
+  }
+  @keyframes nebulaBreath {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.08); }
+  }
+
+  /* ── SHOOTING STARS ── */
+  .shoot {
+    position: fixed;
+    width: 2px;
+    height: 120px;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.8), transparent);
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    animation: shoot linear forwards;
+  }
+  @keyframes shoot {
+    0% { opacity: 0; transform: translateY(-20px) rotate(var(--angle)); }
+    10% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(300px) rotate(var(--angle)); }
+  }
+
+  /* ── WRAPPER ── */
+  #app {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ═══════════════════════════════════════
+     SCREEN 1 — CLOCK
+  ═══════════════════════════════════════ */
+  #screen-clock {
+    text-align: center;
+    opacity: 1;
+    transition: opacity 1.2s ease;
+  }
+  #screen-clock.hidden { opacity: 0; pointer-events: none; }
+
+  .clock-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.5em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 1.4s ease 0.6s forwards;
+  }
+
+  #clock-display {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3.5rem, 10vw, 7rem);
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    text-shadow: 0 0 40px rgba(232,228,220,0.25), 0 0 80px rgba(232,228,220,0.1);
+    opacity: 0;
+    animation: fadeUp 1.4s ease 0.9s forwards;
+    line-height: 1;
+  }
+
+  #ampm {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1rem, 2.5vw, 1.6rem);
+    letter-spacing: 0.3em;
+    color: var(--ink-dim);
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+
+  .clock-divider {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--ink-dim), transparent);
+    margin: 2.5rem auto;
+    opacity: 0;
+    animation: fadeUp 1.4s ease 1.2s forwards;
+  }
+
+  .letter-hint {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: clamp(0.85rem, 2vw, 1.05rem);
+    color: var(--ink-dim);
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+    opacity: 0;
+    animation: fadeUp 1.4s ease 1.5s forwards;
+  }
+
+  .countdown-wrapper {
+    margin-top: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 1.4s ease 1.8s forwards;
+  }
+  .countdown-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.55em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  #countdown {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+    letter-spacing: 0.15em;
+    color: var(--ink);
+    opacity: 0.7;
+  }
+
+  /* OPEN BUTTON */
+  #btn-open {
+    display: none;
+    margin: 2.5rem auto 0;
+    padding: 0.85rem 3rem;
+    background: transparent;
+    border: 1px solid rgba(232,228,220,0.4);
+    color: var(--ink);
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.5s ease;
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+  #btn-open::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(232,228,220,0.04);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s ease;
+  }
+  #btn-open:hover::before { transform: scaleX(1); }
+  #btn-open:hover {
+    border-color: rgba(232,228,220,0.8);
+    text-shadow: 0 0 20px rgba(232,228,220,0.5);
+    box-shadow: 0 0 30px rgba(232,228,220,0.08), inset 0 0 20px rgba(232,228,220,0.03);
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 15px rgba(232,228,220,0.06); }
+    50% { box-shadow: 0 0 30px rgba(232,228,220,0.15), 0 0 60px rgba(232,228,220,0.05); }
+  }
+
+  /* ═══════════════════════════════════════
+     SCREEN 2 — LETTER
+  ═══════════════════════════════════════ */
+  #screen-letter {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    padding: 5vh 0 10vh;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+  }
+  #screen-letter.visible { opacity: 1; }
+
+  .letter-container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* envelope reveal */
+  .envelope-reveal {
+    text-align: center;
+    margin-bottom: 5rem;
+    opacity: 0;
+    animation: fadeUp 1.6s ease 0.3s forwards;
+  }
+  .envelope-icon {
+    width: 60px;
+    height: 44px;
+    margin: 0 auto 1.5rem;
+    position: relative;
+  }
+  .envelope-icon svg { width: 100%; height: 100%; }
+  .envelope-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.6em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+
+  /* section */
+  .letter-section {
+    margin-bottom: 4rem;
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+  }
+  .letter-section.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .section-ornament {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .section-ornament .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(232,228,220,0.2), transparent);
+  }
+  .section-ornament .glyph {
+    font-size: 0.7rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.6em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+
+  .section-body {
+    font-family: 'IM Fell English', serif;
+    font-size: clamp(1rem, 2.2vw, 1.15rem);
+    line-height: 2;
+    color: var(--ink);
+    opacity: 0.88;
+  }
+  .section-body em {
+    font-style: italic;
+    color: #d4cfc7;
+  }
+  .section-body .drop-cap::first-letter {
+    font-family: 'Cinzel', serif;
+    font-size: 3.5em;
+    float: left;
+    line-height: 0.75;
+    margin-right: 0.12em;
+    margin-top: 0.08em;
+    color: var(--ink);
+    text-shadow: 0 0 30px rgba(232,228,220,0.3);
+  }
+
+  /* Quote section */
+  .quote-block {
+    border-left: 1px solid rgba(232,228,220,0.2);
+    padding: 1.5rem 2rem;
+    margin: 2rem 0;
+    font-style: italic;
+    color: var(--ink-dim);
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    line-height: 1.9;
+  }
+
+  /* Photo / image placeholder section */
+  .memory-frame {
+    width: 100%;
+    margin: 1.8rem 0;
+    border: 1px solid rgba(232,228,220,0.12);
+    position: relative;
+    overflow: hidden;
+    background: #06050a;
+  }
+  .memory-frame::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgba(232,228,220,0.05);
+    pointer-events: none;
+    z-index: 2;
+  }
+  .memory-frame svg { display: block; width: 100%; height: auto; }
+
+  /* Wax seal / closing */
+  .letter-seal {
+    text-align: center;
+    margin-top: 5rem;
+    padding-top: 4rem;
+    border-top: 1px solid rgba(232,228,220,0.08);
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+  }
+  .letter-seal.revealed { opacity: 1; transform: translateY(0); }
+
+  .seal-circle {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: 1px solid rgba(232,228,220,0.25);
+    margin: 0 auto 1.5rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+    position: relative;
+    box-shadow: 0 0 30px rgba(232,228,220,0.06), inset 0 0 20px rgba(232,228,220,0.03);
+  }
+  .seal-circle::before {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border-radius: 50%;
+    border: 1px solid rgba(232,228,220,0.1);
+  }
+  .seal-sign {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1.3rem;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+  .seal-date {
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.5em;
+    color: var(--ink-dim);
+  }
+
+  /* ── UTILS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(232,228,220,0.12); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+
+<div id="app">
+
+  <!-- ── SCREEN 1: CLOCK ── -->
+  <div id="screen-clock">
+    <p class="clock-label">A letter awaits you</p>
+
+    <div id="clock-display">
+      <span id="clock-time">12:00</span><span id="ampm">AM</span>
+    </div>
+
+    <div class="clock-divider"></div>
+
+    <p class="letter-hint">
+      Something has been written for you.<br>
+      It opens when the stars align —<br>
+      <em>tomorrow, at noon.</em>
+    </p>
+
+    <div class="countdown-wrapper">
+      <p class="countdown-label">Opens in</p>
+      <div id="countdown">—</div>
+    </div>
+
+    <button id="btn-open" onclick="openLetter()">Open</button>
+  </div>
+
+  <!-- ── SCREEN 2: LETTER ── -->
+  <div id="screen-letter">
+    <div class="letter-container">
+
+      <div class="envelope-reveal">
+        <div class="envelope-icon">
+          <svg viewBox="0 0 60 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="58" height="42" rx="2" stroke="rgba(232,228,220,0.35)" stroke-width="1"/>
+            <path d="M1 3 L30 24 L59 3" stroke="rgba(232,228,220,0.35)" stroke-width="1" fill="none"/>
+            <path d="M1 43 L22 22" stroke="rgba(232,228,220,0.2)" stroke-width="1"/>
+            <path d="M59 43 L38 22" stroke="rgba(232,228,220,0.2)" stroke-width="1"/>
+          </svg>
+        </div>
+        <p class="envelope-tag">For you · March 24</p>
+      </div>
+
+      <!-- SECTION 1 -->
+      <div class="letter-section" data-section="1">
+        <div class="section-ornament">
+          <span class="line"></span>
+          <span class="glyph">✦</span>
+          <span class="line"></span>
+        </div>
+        <p class="section-title">I.</p>
+        <div class="section-body drop-cap">
+          <b>Happy 19th year of existence, darling.</b><br><br>
+
+I can't contain the happiness I feel being able to be part of your life, to celebrate it, and to still be part of it even now. I am so happy and grateful that I pursued you, even back when you were younger than me and wandering everywhere on the internet at such a young age. I wouldn't have you right now if I hadn't let myself be brave enough to be awkward and to reach out. I still can't forget how embarrassing that was, but I love that I did it. You are one of the best decisions I’ve ever made in my life.
+
+<br><br>
+<i><p style = "color: #adabab"> P.S. I’m so glad that out of all the corners of the internet where you could have been wandering, you wandered into my life.</p></i>
+
+
+        </div>
+      </div>
+
+      <!-- SECTION 2 -->
+      <div class="letter-section" data-section="2">
+        <div class="section-ornament">
+          <span class="line"></span>
+          <span class="glyph">✦</span>
+          <span class="line"></span>
+        </div>
+        <p class="section-title">II. </p>
+        <div class="section-body">
+          I feel sorry now that I realize how young you were when I asked you to be my girlfriend. Everything moved so fast because I couldn't wait any longer; I had waited already, and I couldn't afford to wait any more time without you giving me a chance—or rather, accepting me. I was literally crying because it pained me just to want you but not have you. And then suddenly, there was that post where someone else asked you out first. That was so rude to me, you know? Even if I wasn’t the first person you liked, or the first one to ask you, I still believe I should be the only one you choose, with no other options. Like, pleaseeeeeeeeee, Okay?
+
+        </div>
+        <div class="quote-block">
+          "The most important things are the hardest to say, because words diminish them."
+        </div>
+        <div class="memory-frame">
+          <!-- Night sky illustration -->
+          <svg viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="s1_skyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#04030c"/>
+                <stop offset="60%" stop-color="#0a0814"/>
+                <stop offset="100%" stop-color="#12101c"/>
+              </linearGradient>
+              <radialGradient id="s1_moonGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="rgba(232,228,210,0.18)"/>
+                <stop offset="100%" stop-color="rgba(232,228,210,0)"/>
+              </radialGradient>
+              <linearGradient id="s1_hillGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1a1828"/>
+                <stop offset="100%" stop-color="#0d0c14"/>
+              </linearGradient>
+              <linearGradient id="s1_fgGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0e0c18"/>
+                <stop offset="100%" stop-color="#06050e"/>
+              </linearGradient>
+              <filter id="s1_cloudBlur"><feGaussianBlur stdDeviation="8"/></filter>
+              <filter id="s1_softBlur"><feGaussianBlur stdDeviation="3"/></filter>
+              <filter id="s1_starGlow">
+                <feGaussianBlur stdDeviation="1.2" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <radialGradient id="s1_vignette" cx="50%" cy="50%" r="70%">
+                <stop offset="60%" stop-color="transparent"/>
+                <stop offset="100%" stop-color="rgba(4,3,10,0.65)"/>
+              </radialGradient>
+            </defs>
+
+            <rect width="680" height="420" fill="url(#s1_skyGrad)"/>
+            <ellipse cx="340" cy="160" rx="280" ry="90" fill="rgba(200,195,220,0.04)" filter="url(#s1_cloudBlur)"/>
+            <ellipse cx="360" cy="140" rx="200" ry="60" fill="rgba(180,175,210,0.03)" filter="url(#s1_cloudBlur)"/>
+            <ellipse cx="100" cy="95" rx="110" ry="30" fill="rgba(40,38,58,0.7)" filter="url(#s1_cloudBlur)"/>
+            <ellipse cx="80" cy="88" rx="70" ry="22" fill="rgba(50,48,68,0.5)" filter="url(#s1_cloudBlur)"/>
+            <ellipse cx="560" cy="75" rx="130" ry="28" fill="rgba(38,36,56,0.65)" filter="url(#s1_cloudBlur)"/>
+            <ellipse cx="590" cy="68" rx="80" ry="18" fill="rgba(48,46,66,0.5)" filter="url(#s1_cloudBlur)"/>
+            <ellipse cx="200" cy="200" rx="150" ry="22" fill="rgba(30,28,46,0.55)" filter="url(#s1_cloudBlur)"/>
+            <ellipse cx="500" cy="185" rx="120" ry="18" fill="rgba(32,30,50,0.5)" filter="url(#s1_cloudBlur)"/>
+            <ellipse cx="340" cy="220" rx="180" ry="16" fill="rgba(28,26,44,0.4)" filter="url(#s1_cloudBlur)"/>
+            <circle cx="490" cy="88" r="70" fill="url(#s1_moonGlow)"/>
+            <circle cx="490" cy="88" r="34" fill="#e2ddc8" opacity="0.92"/>
+            <circle cx="478" cy="80" r="5" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="502" cy="96" r="3.5" fill="rgba(0,0,0,0.07)"/>
+            <circle cx="485" cy="100" r="2.5" fill="rgba(0,0,0,0.06)"/>
+            <circle cx="498" cy="76" r="2" fill="rgba(0,0,0,0.05)"/>
+            <circle cx="502" cy="88" r="34" fill="#0a0814" opacity="0.18"/>
+            <g filter="url(#s1_starGlow)" fill="#e8e4dc">
+              <circle cx="38"  cy="22"  r="1.1" opacity="0.9"/><circle cx="72"  cy="45"  r="0.8" opacity="0.7"/>
+              <circle cx="130" cy="18"  r="1.3" opacity="0.85"/><circle cx="165" cy="38"  r="0.7" opacity="0.6"/>
+              <circle cx="210" cy="12"  r="1.0" opacity="0.9"/><circle cx="248" cy="55"  r="0.9" opacity="0.75"/>
+              <circle cx="285" cy="28"  r="1.2" opacity="0.8"/><circle cx="305" cy="10"  r="0.7" opacity="0.65"/>
+              <circle cx="350" cy="40"  r="1.0" opacity="0.7"/><circle cx="388" cy="18"  r="1.4" opacity="0.9"/>
+              <circle cx="420" cy="50"  r="0.8" opacity="0.6"/><circle cx="445" cy="22"  r="1.1" opacity="0.85"/>
+              <circle cx="398" cy="62"  r="0.6" opacity="0.55"/><circle cx="558" cy="30"  r="1.3" opacity="0.88"/>
+              <circle cx="612" cy="18"  r="0.9" opacity="0.7"/><circle cx="648" cy="42"  r="1.0" opacity="0.8"/>
+              <circle cx="55"  cy="62"  r="0.7" opacity="0.6"/><circle cx="178" cy="64"  r="0.8" opacity="0.55"/>
+              <circle cx="328" cy="72"  r="0.9" opacity="0.65"/><circle cx="468" cy="44"  r="0.7" opacity="0.5"/>
+              <circle cx="620" cy="56"  r="1.1" opacity="0.75"/><circle cx="92"  cy="14"  r="0.5" opacity="0.45"/>
+              <circle cx="226" cy="34"  r="0.5" opacity="0.4"/><circle cx="376" cy="15"  r="0.5" opacity="0.45"/>
+              <circle cx="540" cy="48"  r="0.5" opacity="0.4"/><circle cx="666" cy="24"  r="0.5" opacity="0.45"/>
+            </g>
+            <g fill="#e8e4dc">
+              <path d="M26 50 L27.2 53.5 L30.5 54.5 L27.2 55.5 L26 59 L24.8 55.5 L21.5 54.5 L24.8 53.5 Z" opacity="0.8"/>
+              <path d="M320 25 L321 27.8 L323.8 28.8 L321 29.8 L320 32.6 L319 29.8 L316.2 28.8 L319 27.8 Z" opacity="0.75"/>
+              <path d="M600 38 L601 40.5 L603.5 41.5 L601 42.5 L600 45 L599 42.5 L596.5 41.5 L599 40.5 Z" opacity="0.7"/>
+            </g>
+            <ellipse cx="180" cy="380" rx="260" ry="110" fill="url(#s1_hillGrad)" opacity="0.95"/>
+            <ellipse cx="520" cy="390" rx="240" ry="100" fill="url(#s1_hillGrad)" opacity="0.9"/>
+            <ellipse cx="340" cy="400" rx="320" ry="80" fill="#100f1a"/>
+            <ellipse cx="490" cy="305" rx="80" ry="12" fill="rgba(220,216,195,0.06)" filter="url(#s1_softBlur)"/>
+            <rect x="0" y="350" width="680" height="70" fill="url(#s1_fgGrad)"/>
+            <rect x="58" y="270" width="5" height="90" fill="#080710"/>
+            <line x1="60" y1="280" x2="30" y2="255" stroke="#080710" stroke-width="3"/>
+            <line x1="60" y1="295" x2="25" y2="278" stroke="#080710" stroke-width="2.5"/>
+            <line x1="60" y1="308" x2="22" y2="300" stroke="#080710" stroke-width="2"/>
+            <line x1="60" y1="280" x2="90" y2="260" stroke="#080710" stroke-width="3"/>
+            <line x1="60" y1="295" x2="95" y2="282" stroke="#080710" stroke-width="2.5"/>
+            <line x1="60" y1="308" x2="92" y2="303" stroke="#080710" stroke-width="2"/>
+            <line x1="30" y1="255" x2="16" y2="243" stroke="#080710" stroke-width="1.5"/>
+            <line x1="30" y1="255" x2="35" y2="240" stroke="#080710" stroke-width="1.5"/>
+            <line x1="25" y1="278" x2="12" y2="268" stroke="#080710" stroke-width="1.2"/>
+            <line x1="90" y1="260" x2="104" y2="248" stroke="#080710" stroke-width="1.5"/>
+            <line x1="90" y1="260" x2="85" y2="245" stroke="#080710" stroke-width="1.5"/>
+            <rect x="617" y="280" width="5" height="80" fill="#080710"/>
+            <line x1="619" y1="290" x2="592" y2="268" stroke="#080710" stroke-width="3"/>
+            <line x1="619" y1="303" x2="588" y2="290" stroke="#080710" stroke-width="2.5"/>
+            <line x1="619" y1="290" x2="646" y2="270" stroke="#080710" stroke-width="3"/>
+            <line x1="619" y1="303" x2="648" y2="292" stroke="#080710" stroke-width="2.5"/>
+            <line x1="592" y1="268" x2="578" y2="258" stroke="#080710" stroke-width="1.5"/>
+            <line x1="592" y1="268" x2="595" y2="254" stroke="#080710" stroke-width="1.5"/>
+            <line x1="646" y1="270" x2="660" y2="260" stroke="#080710" stroke-width="1.5"/>
+            <line x1="646" y1="270" x2="643" y2="256" stroke="#080710" stroke-width="1.5"/>
+            <ellipse cx="338" cy="338" rx="9" ry="11" fill="#080710"/>
+            <circle cx="338" cy="325" r="6" fill="#080710"/>
+            <path d="M330 348 Q320 358 314 355" stroke="#080710" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M346 348 Q356 358 362 355" stroke="#080710" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <ellipse cx="338" cy="335" rx="18" ry="20" fill="rgba(220,216,195,0.04)" filter="url(#s1_softBlur)"/>
+            <circle cx="150" cy="340" r="1.2" fill="rgba(220,216,180,0.6)" filter="url(#s1_softBlur)"/>
+            <circle cx="220" cy="332" r="1.0" fill="rgba(220,216,180,0.5)" filter="url(#s1_softBlur)"/>
+            <circle cx="460" cy="338" r="1.1" fill="rgba(220,216,180,0.55)" filter="url(#s1_softBlur)"/>
+            <circle cx="530" cy="328" r="0.9" fill="rgba(220,216,180,0.45)" filter="url(#s1_softBlur)"/>
+            <rect width="680" height="420" fill="url(#s1_vignette)"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- SECTION 3 -->
+      <div class="letter-section" data-section="3">
+        <div class="section-ornament">
+          <span class="line"></span>
+          <span class="glyph">✦</span>
+          <span class="line"></span>
+        </div>
+        <p class="section-title">III. </p>
+        <div class="section-body">
+          And no—I didn't love you at first because of your face, your clothes, your style, your mindset, or the way you interact. No. I’m just comfortable with you—so much so that I can’t even breathe normally without you. Well, yes, I already admired you for your crafts, but that isn't just it. I know those things wouldn't be enough to answer the question I asked myself a long time ago: "Why do I like you?" Maybe it's mainly because it makes me cry when you aren't here and you aren't with me. Can that be enough? I can’t function properly without you—not when you’re silent and grumpy, and not when we’re both being avoidant in our own ways and for our own reasons.
+        </div>
+
+        <!-- Night ocean illustration -->
+        <div class="memory-frame">
+          <svg viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="s2_oceanSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#03020a"/>
+                <stop offset="55%" stop-color="#080618"/>
+                <stop offset="100%" stop-color="#0e0c20"/>
+              </linearGradient>
+              <linearGradient id="s2_oceanWater" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0c0b1e"/>
+                <stop offset="100%" stop-color="#050410"/>
+              </linearGradient>
+              <radialGradient id="s2_moonGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="rgba(235,230,210,0.22)"/>
+                <stop offset="100%" stop-color="rgba(235,230,210,0)"/>
+              </radialGradient>
+              <radialGradient id="s2_moonPath" cx="50%" cy="0%" r="100%" fx="50%" fy="0%">
+                <stop offset="0%" stop-color="rgba(220,215,190,0.25)"/>
+                <stop offset="100%" stop-color="rgba(220,215,190,0)"/>
+              </radialGradient>
+              <filter id="s2_blur4"><feGaussianBlur stdDeviation="4"/></filter>
+              <filter id="s2_blur8"><feGaussianBlur stdDeviation="8"/></filter>
+              <filter id="s2_blur14"><feGaussianBlur stdDeviation="14"/></filter>
+              <filter id="s2_rippleBlur"><feGaussianBlur stdDeviation="1.2"/></filter>
+              <filter id="s2_starGlow">
+                <feGaussianBlur stdDeviation="1" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <clipPath id="s2_waterClip">
+                <rect x="0" y="195" width="680" height="185"/>
+              </clipPath>
+              <radialGradient id="s2_vignette" cx="50%" cy="50%" r="70%">
+                <stop offset="55%" stop-color="transparent"/>
+                <stop offset="100%" stop-color="rgba(3,2,10,0.7)"/>
+              </radialGradient>
+            </defs>
+
+            <rect width="680" height="380" fill="url(#s2_oceanSky)"/>
+            <g filter="url(#s2_starGlow)" fill="#e8e4dc">
+             
+            </g>
+            <g fill="#e8e4dc">
+              <path d="M22 55 L23 58 L26 59 L23 60 L22 63 L21 60 L18 59 L21 58 Z" opacity="0.75"/>
+              <path d="M382 20 L383 22.5 L385.5 23.5 L383 24.5 L382 27 L381 24.5 L378.5 23.5 L381 22.5 Z" opacity="0.7"/>
+              <path d="M630 55 L631 57.5 L633.5 58.5 L631 59.5 L630 62 L629 59.5 L626.5 58.5 L629 57.5 Z" opacity="0.72"/>
+            </g>
+            <ellipse cx="90"  cy="90"  rx="120" ry="28" fill="rgba(38,35,58,0.65)" filter="url(#s2_blur8)"/>
+            <ellipse cx="60"  cy="82"  rx="70"  ry="18" fill="rgba(48,45,68,0.45)" filter="url(#s2_blur8)"/>
+            <ellipse cx="570" cy="80"  rx="140" ry="26" fill="rgba(36,33,56,0.6)"  filter="url(#s2_blur8)"/>
+            <ellipse cx="600" cy="72"  rx="85"  ry="16" fill="rgba(46,43,66,0.4)"  filter="url(#s2_blur8)"/>
+            <ellipse cx="310" cy="130" rx="160" ry="20" fill="rgba(30,28,48,0.4)"  filter="url(#s2_blur8)"/>
+            
+            <rect x="300" y="195" width="80" height="185" fill="url(#s2_moonPath)" filter="url(#s2_blur14)"/>
+            <rect x="320" y="195" width="40" height="185" fill="rgba(220,215,185,0.07)" filter="url(#s2_blur8)"/>
+            <ellipse cx="340" cy="195" rx="200" ry="18" fill="rgba(200,196,175,0.08)" filter="url(#s2_blur8)"/>
+            <rect x="0" y="195" width="680" height="185" fill="url(#s2_oceanWater)"/>
+            <g clip-path="url(#s2_waterClip)" stroke="rgba(220,216,190,0.12)" fill="none" filter="url(#s2_rippleBlur)">
+              <path d="M295 210 Q340 206 385 210" stroke-width="1.2" opacity="0.9"/>
+              <path d="M285 222 Q340 217 395 222" stroke-width="1.0" opacity="0.8"/>
+              <path d="M275 236 Q340 230 405 236" stroke-width="0.9" opacity="0.7"/>
+              <path d="M265 252 Q340 245 415 252" stroke-width="0.8" opacity="0.6"/>
+              <path d="M255 270 Q340 262 425 270" stroke-width="0.7" opacity="0.5"/>
+              <path d="M248 290 Q340 280 432 290" stroke-width="0.6" opacity="0.4"/>
+              <path d="M242 312 Q340 300 438 312" stroke-width="0.5" opacity="0.35"/>
+              <path d="M238 336 Q340 322 442 336" stroke-width="0.5" opacity="0.28"/>
+              <path d="M40  215 Q90  213 140 215" stroke-width="0.6" opacity="0.35"/>
+              <path d="M20  235 Q80  232 135 235" stroke-width="0.5" opacity="0.28"/>
+              <path d="M540 215 Q590 213 640 215" stroke-width="0.6" opacity="0.35"/>
+              <path d="M545 235 Q600 232 660 235" stroke-width="0.5" opacity="0.28"/>
+              <path d="M60  260 Q110 257 155 260" stroke-width="0.5" opacity="0.22"/>
+              <path d="M520 260 Q575 257 625 260" stroke-width="0.5" opacity="0.22"/>
+            </g>
+            <path d="M0 195 Q40 170 90 182 Q130 192 160 195 L0 195 Z" fill="#0a0918"/>
+            <path d="M680 195 Q640 168 590 180 Q550 190 520 195 L680 195 Z" fill="#0a0918"/>
+            <rect width="680" height="380" fill="url(#s2_vignette)"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- SECTION 4 -->
+      <div class="letter-section" data-section="4">
+        <div class="section-ornament">
+          <span class="line"></span>
+          <span class="glyph">✦</span>
+          <span class="line"></span>
+        </div>
+        <p class="section-title">IV.</p>
+        <div class="section-body">
+          Thank you for experiencing another year of milestones—the joy, the sadness, the madness, and every other feeling and journey you’ve navigated leading up to your birthday. <em>I am forever grateful for your growth and your braveness.</em>
+
+You’ve come so far, and you deserve to walk much further, achieving more and more until you can finally rest without having to worry about anything. I hope that rest will be with me, right beside you. You’re still a baby, though, so continue enjoying life as it is. Even if I’m far away, I’m still with you, <em>as always</em>. I’d always choose to be with you—and I’d always choose you.
+<br><br>
+<em>I love you, sweetheart.</em>
+        </div>
+
+        <!-- Lantern illustration -->
+        <div class="memory-frame">
+          <svg viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="s3_sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#02020a"/>
+                <stop offset="100%" stop-color="#0a0916"/>
+              </linearGradient>
+              <radialGradient id="s3_flame" cx="50%" cy="60%" r="50%">
+                <stop offset="0%"   stop-color="rgba(255,245,200,1)"/>
+                <stop offset="30%"  stop-color="rgba(240,210,130,0.9)"/>
+                <stop offset="70%"  stop-color="rgba(200,160,60,0.5)"/>
+                <stop offset="100%" stop-color="rgba(180,130,40,0)"/>
+              </radialGradient>
+              <radialGradient id="s3_glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%"   stop-color="rgba(240,210,130,0.28)"/>
+                <stop offset="40%"  stop-color="rgba(220,185,100,0.12)"/>
+                <stop offset="100%" stop-color="rgba(200,160,60,0)"/>
+              </radialGradient>
+              <radialGradient id="s3_floor" cx="50%" cy="0%" r="100%">
+                <stop offset="0%"   stop-color="rgba(220,185,100,0.18)"/>
+                <stop offset="100%" stop-color="rgba(220,185,100,0)"/>
+              </radialGradient>
+              <filter id="s3_b4"><feGaussianBlur stdDeviation="4"/></filter>
+              <filter id="s3_b10"><feGaussianBlur stdDeviation="10"/></filter>
+              <filter id="s3_b20"><feGaussianBlur stdDeviation="20"/></filter>
+              <filter id="s3_star">
+                <feGaussianBlur stdDeviation="1" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <radialGradient id="s3_vig" cx="50%" cy="50%" r="70%">
+                <stop offset="50%" stop-color="transparent"/>
+                <stop offset="100%" stop-color="rgba(2,2,10,0.75)"/>
+              </radialGradient>
+            </defs>
+
+            <rect width="680" height="380" fill="url(#s3_sky)"/>
+            <g filter="url(#s3_star)" fill="#e8e4dc">
+              <circle cx="28"  cy="20"  r="0.8" opacity="0.55"/><circle cx="72"  cy="42"  r="0.6" opacity="0.45"/>
+              <circle cx="118" cy="16"  r="0.9" opacity="0.6"/><circle cx="164" cy="50"  r="0.7" opacity="0.5"/>
+              <circle cx="200" cy="25"  r="0.8" opacity="0.55"/><circle cx="258" cy="38"  r="0.6" opacity="0.45"/>
+              <circle cx="580" cy="18"  r="0.9" opacity="0.58"/><circle cx="618" cy="44"  r="0.7" opacity="0.5"/>
+              <circle cx="648" cy="22"  r="0.8" opacity="0.55"/><circle cx="548" cy="52"  r="0.6" opacity="0.45"/>
+              <circle cx="508" cy="14"  r="1.0" opacity="0.6"/><circle cx="460" cy="40"  r="0.7" opacity="0.5"/>
+              <circle cx="418" cy="20"  r="0.8" opacity="0.55"/><circle cx="50"  cy="75"  r="0.5" opacity="0.38"/>
+              <circle cx="150" cy="80"  r="0.5" opacity="0.35"/><circle cx="530" cy="78"  r="0.5" opacity="0.38"/>
+              <circle cx="630" cy="72"  r="0.5" opacity="0.35"/>
+            </g>
+            <ellipse cx="120"  cy="90"  rx="130" ry="28" fill="rgba(35,32,52,0.5)"  filter="url(#s3_b10)"/>
+            <ellipse cx="580"  cy="80"  rx="140" ry="26" fill="rgba(33,30,50,0.45)" filter="url(#s3_b10)"/>
+            <ellipse cx="340"  cy="130" rx="170" ry="20" fill="rgba(28,25,44,0.35)" filter="url(#s3_b10)"/>
+            <ellipse cx="340" cy="240" rx="260" ry="180" fill="rgba(230,195,90,0.06)" filter="url(#s3_b20)"/>
+            <ellipse cx="340" cy="240" rx="160" ry="120" fill="rgba(240,210,110,0.07)" filter="url(#s3_b20)"/>
+            <rect x="120" y="295" width="440" height="10" rx="2" fill="#0e0c18"/>
+            <rect x="118" y="303" width="444" height="4"  rx="1" fill="#0a0914" opacity="0.8"/>
+            <rect x="150" y="305" width="6" height="60" fill="#0c0b16"/>
+            <rect x="524" y="305" width="6" height="60" fill="#0c0b16"/>
+            <ellipse cx="340" cy="296" rx="120" ry="14" fill="rgba(230,195,90,0.12)" filter="url(#s3_b4)"/>
+            <line x1="340" y1="60" x2="340" y2="112" stroke="rgba(200,196,185,0.4)" stroke-width="1.2"/>
+            <path d="M316 112 Q340 106 364 112 L358 120 Q340 116 322 120 Z" fill="#c8c4b2" opacity="0.85"/>
+            <rect x="334" y="108" width="12" height="6" rx="1" fill="#d0ccba" opacity="0.9"/>
+            <rect x="318" y="120" width="4" height="120" rx="2" fill="#b8b4a2" opacity="0.8"/>
+            <rect x="358" y="120" width="4" height="120" rx="2" fill="#b8b4a2" opacity="0.8"/>
+            <rect x="326" y="122" width="3" height="116" rx="1.5" fill="#a8a496" opacity="0.5"/>
+            <rect x="351" y="122" width="3" height="116" rx="1.5" fill="#a8a496" opacity="0.5"/>
+            <rect x="321" y="121" width="38" height="118" rx="1" fill="rgba(240,210,120,0.08)"/>
+            <rect x="323" y="123" width="2" height="114" rx="1" fill="rgba(255,245,200,0.12)"/>
+            <rect x="355" y="123" width="2" height="114" rx="1" fill="rgba(255,245,200,0.08)"/>
+            <rect x="316" y="152" width="48" height="3" rx="1.5" fill="#b0ac9a" opacity="0.7"/>
+            <rect x="316" y="200" width="48" height="3" rx="1.5" fill="#b0ac9a" opacity="0.7"/>
+            <rect x="316" y="236" width="48" height="3" rx="1.5" fill="#b0ac9a" opacity="0.7"/>
+            <path d="M322 238 Q340 244 358 238 L362 246 Q340 253 318 246 Z" fill="#b8b4a2" opacity="0.85"/>
+            <ellipse cx="340" cy="188" rx="55" ry="65" fill="url(#s3_glow)"/>
+            <ellipse cx="340" cy="185" rx="28" ry="38" fill="rgba(240,210,130,0.18)" filter="url(#s3_b4)"/>
+            <path d="M340 148 C332 162 326 175 328 185 C330 197 340 203 340 203 C340 203 350 197 352 185 C354 175 348 162 340 148 Z" fill="rgba(240,210,130,0.35)" filter="url(#s3_b4)"/>
+            <path d="M340 155 C334 166 330 176 332 184 C334 194 340 198 340 198 C340 198 346 194 348 184 C350 176 346 166 340 155 Z" fill="rgba(250,228,160,0.7)"/>
+            <path d="M340 162 C337 170 335 178 337 183 C338 189 340 192 340 192 C340 192 342 189 343 183 C345 178 343 170 340 162 Z" fill="rgba(255,248,210,0.95)"/>
+            <ellipse cx="340" cy="163" rx="3" ry="5" fill="rgba(255,255,240,0.9)"/>
+            <path d="M340 148 Q337 138 340 128 Q343 118 340 110" stroke="rgba(200,196,185,0.15)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <path d="M338 148 Q333 136 337 124" stroke="rgba(200,196,185,0.1)" stroke-width="1" fill="none" stroke-linecap="round"/>
+            <path d="M342 148 Q347 136 343 124" stroke="rgba(200,196,185,0.1)" stroke-width="1" fill="none" stroke-linecap="round"/>
+            <rect x="165" y="278" width="68" height="18" rx="1" fill="#0f0d1c" transform="rotate(-4,165,278)"/>
+            <line x1="170" y1="284" x2="225" y2="283" stroke="rgba(180,176,165,0.2)" stroke-width="1"/>
+            <line x1="170" y1="289" x2="218" y2="288" stroke="rgba(180,176,165,0.15)" stroke-width="1"/>
+            <rect x="430" y="275" width="72" height="20" rx="1" fill="#0f0d1c" transform="rotate(3,430,275)"/>
+            <line x1="436" y1="281" x2="494" y2="281" stroke="rgba(180,176,165,0.2)" stroke-width="1"/>
+            <line x1="436" y1="286" x2="490" y2="287" stroke="rgba(180,176,165,0.15)" stroke-width="1"/>
+            <line x1="436" y1="291" x2="485" y2="292" stroke="rgba(180,176,165,0.12)" stroke-width="1"/>
+            <path d="M248 270 Q268 278 276 295" stroke="rgba(200,196,180,0.45)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <path d="M248 270 Q242 262 252 260 Q260 265 248 270 Z" fill="rgba(200,196,180,0.4)"/>
+            <ellipse cx="340" cy="293" rx="90" ry="6" fill="rgba(230,195,90,0.09)" filter="url(#s3_b4)"/>
+            <rect width="680" height="380" fill="url(#s3_vig)"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- SEAL / SIGN-OFF -->
+      <div class="letter-seal">
+        <div class="seal-circle">✦</div>
+        <p class="seal-sign">With everything,</p>
+        <p class="seal-sign" style="margin-top:0.2rem; font-size:1.6rem;">— jin & mingyu</p>
+        <p class="seal-date" style="margin-top:1.2rem;">March 24 · 12:00 noon</p>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ─── STAR CANVAS ─── */
+const canvas = document.getElementById('sky');
+const ctx = canvas.getContext('2d');
+let stars = [], W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', () => { resize(); buildStars(); });
+
+function buildStars() {
+  stars = [];
+  const count = Math.floor((W * H) / 2200);
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.2 + 0.2,
+      alpha: Math.random() * 0.7 + 0.2,
+      speed: Math.random() * 0.004 + 0.001,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+}
+buildStars();
+
+let t = 0;
+function drawStars() {
+  ctx.clearRect(0, 0, W, H);
+  t += 0.012;
+  for (const s of stars) {
+    const a = s.alpha * (0.5 + 0.5 * Math.sin(t * s.speed * 80 + s.phase));
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(232,228,220,${a})`;
+    ctx.fill();
+  }
+  requestAnimationFrame(drawStars);
+}
+drawStars();
+
+/* ─── SHOOTING STARS ─── */
+function spawnShoot() {
+  const el = document.createElement('div');
+  el.className = 'shoot';
+  const angle = -30 + Math.random() * 30;
+  const dur = 0.8 + Math.random() * 0.8;
+  el.style.cssText = `
+    left:${Math.random()*100}%;
+    top:${Math.random()*50}%;
+    --angle:${angle}deg;
+    animation-duration:${dur}s;
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), dur * 1000 + 100);
+}
+setInterval(spawnShoot, 3800 + Math.random() * 2000);
+setTimeout(spawnShoot, 1200);
+
+/* ─── CLOCK ─── */
+function updateClock() {
+  const now = new Date();
+  let h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  document.getElementById('clock-time').textContent = `${h}:${m}`;
+  document.getElementById('ampm').textContent = ampm;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ─── COUNTDOWN ─── */
+function getTarget() {
+  const t = new Date();
+  t.setDate(t.getDate() + (t.getHours() >= 12 ? 1 : 0));
+  t.setHours(12, 0, 0, 0);
+  if (new Date().getDate() === 24 && new Date().getHours() < 12) {
+    return new Date(new Date().getFullYear(), new Date().getMonth(), 24, 12, 0, 0);
+  }
+  return new Date(2026, 2, 24, 12, 0, 0); // March 24 2026 noon
+}
+
+let letterUnlocked = false;
+
+function updateCountdown() {
+  const now = new Date();
+  const target = new Date(2026, 2, 24, 12, 0, 0);
+  const diff = target - now;
+
+  if (diff <= 0 && !letterUnlocked) {
+    document.getElementById('countdown').textContent = 'Now';
+    document.getElementById('btn-open').style.display = 'block';
+    return;
+  }
+
+  const hh = Math.floor(diff / 3600000);
+  const mm = Math.floor((diff % 3600000) / 60000);
+  const ss = Math.floor((diff % 60000) / 1000);
+  document.getElementById('countdown').textContent =
+    `${String(hh).padStart(2,'0')} h  ${String(mm).padStart(2,'0')} m  ${String(ss).padStart(2,'0')} s`;
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+// For demo: show button immediately (remove lock as requested)
+//document.getElementById('btn-open').style.display = 'block';
+
+/* ─── OPEN LETTER ─── */
+function openLetter() {
+  const clockScreen = document.getElementById('screen-clock');
+  const letterScreen = document.getElementById('screen-letter');
+
+  clockScreen.classList.add('hidden');
+  setTimeout(() => {
+    clockScreen.style.display = 'none';
+    letterScreen.style.display = 'block';
+    setTimeout(() => {
+      letterScreen.classList.add('visible');
+      revealSections();
+    }, 50);
+  }, 1200);
+}
+
+function revealSections() {
+  const sections = document.querySelectorAll('.letter-section, .letter-seal');
+  sections.forEach((el, i) => {
+    setTimeout(() => el.classList.add('revealed'), 400 + i * 350);
+  });
+}
+
+/* ─── SCROLL REVEAL (if user scrolls before all animated in) ─── */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('revealed');
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.letter-section, .letter-seal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
